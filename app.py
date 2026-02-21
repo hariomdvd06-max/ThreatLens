@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session  # [web:117]
-from werkzeug.security import generate_password_hash, check_password_hash  # [web:175]
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from models import get_db, init_db
 
 import os
@@ -20,7 +20,7 @@ app.secret_key = "super_secret_change_later"
 username_pattern = re.compile(r'^[a-zA-Z0-9_]{3,20}$')  # letters, digits, underscore, 3–20 chars[web:171]
 
 def is_strong_password(pwd: str) -> bool:
-    """Min 8 chars, upper, lower, digit, special symbol."""  # [web:166][web:167]
+    """Min 8 chars, upper, lower, digit, special symbol."""
     if len(pwd) < 8:
         return False
     has_lower = any(c.islower() for c in pwd)
@@ -126,11 +126,14 @@ def index():
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Recent scans list
     cur.execute(
         "SELECT url, risk, created_at FROM scans WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
         (user['id'],)
     )
     recent_scans = cur.fetchall()
+
     conn.close()
 
     return render_template(
@@ -155,7 +158,7 @@ def scan_url():
     gs_explanation = ""
 
     try:
-        endpoint = f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={SAFE_BROWSING_API_KEY}"  # [web:120]
+        endpoint = f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={SAFE_BROWSING_API_KEY}"  # [web:206][web:207]
         body = {
             "client": {"clientId": "ThreatLens", "clientVersion": "1.0"},
             "threatInfo": {
@@ -176,20 +179,31 @@ def scan_url():
     except Exception:
         gs_explanation = "Safe Browsing check failed (network or quota issue)."
 
-    # 2) Rule-based AI explanation
-    suspicious_words = ['free-money', 'win-prize', '.ru', 'bit.ly']
+    # 2) Rule-based AI explanation (more aggressive for demo)
+    suspicious_words = [
+        'free', 'win', 'prize', 'bonus', 'reward',
+        'login', 'verify', 'update', 'confirm',
+        '.ru', '.cn', '.xyz', 'bit.ly', 'tinyurl.com'
+    ]  # common phishing words + risky TLDs + shorteners[web:210][web:213][web:211][web:214]
+
     explanations = []
+    lower_url = url.lower()
 
     for word in suspicious_words:
-        if word in url.lower():
-            if word == '.ru':
-                explanations.append("Domain uses a foreign TLD often seen in spam.")
-            elif word == 'bit.ly':
-                explanations.append("Shortened URL can hide the real destination.")
+        if word in lower_url:
+            if word in ['.ru', '.cn', '.xyz']:
+                explanations.append("Domain uses a TLD often seen in spam or phishing campaigns.")
+            elif word in ['bit.ly', 'tinyurl.com']:
+                explanations.append("Shortened URL can hide the real destination and is often used in phishing.")
+            elif word in ['login', 'verify', 'update', 'confirm']:
+                explanations.append("Contains account or login-related wording often abused in phishing pages.")
             else:
-                explanations.append("Contains typical scam keywords like free money or prizes.")
+                explanations.append("Contains typical scam keywords like free rewards or prizes.")
 
-    if gs_risk == "Dangerous" or explanations:
+    # Risk decision: Safe Browsing OR 2+ suspicious signals => High
+    if gs_risk == "Dangerous":
+        risk = 'High'
+    elif len(explanations) >= 2:
         risk = 'High'
     else:
         risk = 'Low'
@@ -198,7 +212,7 @@ def scan_url():
     if explanations:
         combined_threat += " " + " ".join(explanations)
 
-    # 2b) Extra educational tip based on risk
+    # Extra educational tip based on risk
     if risk == 'High':
         tip = (
             "Tip: Do not enter passwords or personal details on this site. "
