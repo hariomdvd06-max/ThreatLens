@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ThreatLens Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #e5e7eb;
+        overflow: hidden;
+        background-color: #020617;
+      }
+
+      /* Background image with dark overlay */
+      .bg-wrapper {
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(135deg, rgba(15,23,42,0.9), rgba(15,23,42,0.96)),
+          url("https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80");
+        background-size: cover;
+        background-position: center;
+        filter: saturate(1.1);
+        z-index: -2;
+      }
+
+      /* Animated gradient overlay */
+      .bg-gradient {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 0% 0%, rgba(34,197,94,0.25), transparent 55%),
+                    radial-gradient(circle at 100% 100%, rgba(56,189,248,0.25), transparent 55%);
+        mix-blend-mode: screen;
+        pointer-events: none;
+        animation: floatGlow 12s ease-in-out infinite alternate;
+        z-index: -1;
+      }
+
+      @keyframes floatGlow {
+        from { transform: translate3d(0, 0, 0); }
+        to   { transform: translate3d(0, -15px, 0); }
+      }
+
+      /* Login card */
+      .login-card {
+        width: 100%;
+        max-width: 420px;
+        padding: 1px;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, #22c55e, #0ea5e9, #6366f1);
+        box-shadow: 0 22px 45px rgba(15,23,42,0.85);
+        animation: floatCard 7s ease-in-out infinite alternate;
+      }
+
+      @keyframes floatCard {
+        from { transform: translate3d(0, 0, 0); }
+        to   { transform: translate3d(0, -10px, 0); }
+      }
+
+      .login-inner {
+        background: rgba(15,23,42,0.92);
+        border-radius: inherit;
+        padding: 2rem 2.2rem 2.4rem;
+        backdrop-filter: blur(16px);
+      }
+
+      .login-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .login-title h2 {
+        font-weight: 700;
+        font-size: 1.6rem;
+        letter-spacing: 0.03em;
+      }
+
+      .login-subtitle {
+        font-size: 0.85rem;
+        color: #9ca3af;
+      }
+
+      .form-label {
+        font-size: 0.9rem;
+        color: #d1d5db;
+      }
+
+      .form-control {
+        background-color: #020617;
+        border: 1px solid #1f2937;
+        color: #e5e7eb;
+      }
+
+      .form-control:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 1px rgba(56,189,248,0.4);
+        background-color: #020617;
+        color: #e5e7eb;
+      }
+
+      .btn-login {
+        width: 100%;
+        background: linear-gradient(90deg, #2563eb, #22c55e);
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s;
+        box-shadow: 0 12px 25px rgba(37,99,235,0.45);
+      }
+
+      .btn-login:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+        box-shadow: 0 16px 35px rgba(34,197,94,0.5);
+      }
+
+      .small-link {
+        font-size: 0.85rem;
+        color: #9ca3af;
+      }
+
+      .small-link a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+
+      .small-link a:hover {
+        color: #0ea5e9;
+        text-decoration: underline;
+      }
+
+      .error-text {
+        color: #f97316;
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+        text-align: center;
+      }
+
+      @media (max-width: 576px) {
+        .login-inner {
+          padding: 1.6rem 1.5rem 2rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bg-wrapper"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="login-card">
+      <div class="login-inner">
+        <div class="login-title">
+          <h2>ThreatLens Login</h2>
+          <p class="login-subtitle mb-0">
+            Check suspicious URLs before you click.
+          </p>
+        </div>
+
+        {% if error %}
+          <div class="error-text">
+            {{ error }}
+          </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+            >
+          </div>
+
+          <div class="mb-4">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-login">
+            Login
+          </button>
+        </form>
+
+        <p class="text-center mt-3 small-link mb-0">
+          New here?
+          <a href="{{ url_for('register') }}">Create an account</a>
+        </p>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+
